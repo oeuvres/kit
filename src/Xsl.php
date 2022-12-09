@@ -50,8 +50,8 @@ class Xsl
      */
     public static function load(string $src_file): ?DOMDocument
     {
-        if (true !== ($ret = Filesys::readable($src_file))) {
-            Log::error($ret);
+        if (!Filesys::readable($src_file)) {
+            Log::error("XML file not loaded");
             return null;
         }
         $dom = self::domSkel();
