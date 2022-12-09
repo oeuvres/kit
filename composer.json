@@ -1,6 +1,6 @@
 {
     "name": "oeuvres/kit",
-    "description": "Routing, logging, templating… light code for big texts",
+    "description": "Routing, logging, templating… small code for big texts",
     "type": "library",
     "license": "BSD-3-Clause",
     "autoload": {
