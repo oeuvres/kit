@@ -1,0 +1,21 @@
+{
+    "name": "oeuvres/kit",
+    "description": "Routing, logging, templating… light code for big texts",
+    "type": "library",
+    "license": "BSD-3-Clause",
+    "autoload": {
+        "psr-4": {
+            "Oeuvres\\Kit\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Frédéric Glorieux",
+            "email": "frederic.glorieux@fictif.org"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "psr/log": "1.1.4"
+    }
+}
