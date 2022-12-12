@@ -1,6 +1,7 @@
 {
     "name": "oeuvres/kit",
     "description": "Routing, logging, templating… small code for big texts",
+    "keywords": ["log", "logging", "template", "templating", "framework", "xml", "xslt", "xsl", "router", "routing"],
     "type": "library",
     "license": "BSD-3-Clause",
     "autoload": {
@@ -16,6 +17,9 @@
     ],
     "minimum-stability": "stable",
     "require": {
-        "psr/log": "1.1.4"
+        "psr/log": "1.1.4",
+        "ext-mbstring": "*",
+        "ext-xsl": "*",
+        "ext-zip": "*"
     }
 }
