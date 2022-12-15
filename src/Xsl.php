@@ -54,7 +54,7 @@ class Xsl
             Log::error("XML file not loaded");
             return null;
         }
-        $dom = self::domSkel();
+        $dom = self::dom();
         // $dom->recover=true; // no recover, display errors
         // suspend error reporting, libxml messages are better
         $ret = @$dom->load($src_file, self::LIBXML_OPTIONS);
@@ -97,7 +97,7 @@ class Xsl
      */
     public static function loadXml(string $xml, ?DOMDocument $dom = null): ?DOMDocument
     {
-        if ($dom == null) $dom = self::domSkel();
+        if ($dom == null) $dom = self::dom();
         // suspend error reporting, libxml messages are better
         $ret = $dom->loadXml($xml, self::LIBXML_OPTIONS);
         self::logLibxml(libxml_get_errors());
@@ -107,9 +107,9 @@ class Xsl
 
 
     /**
-     * Return an empty dom with options
+     * Returns an empty dom with nice options for indented xsl
      */
-    private static function domSkel(): DOMDocument
+    public static function dom(): DOMDocument
     {
         $dom = new DOMDocument();
         $dom->substituteEntities = true;
