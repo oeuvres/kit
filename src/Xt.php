@@ -14,15 +14,15 @@ namespace Oeuvres\Kit;
 
 Check::extension('xsl');
 
-use DOMDocument, DOMXPath, XSLTProcessor;
+use DOMDocument, DOMElement, DOMNode, DOMXPath, XSLTProcessor;
 
 /**
- * A set of well configured method for XML manipulation with Libxml
+ * A set of well configured method for XML manipulation with Libxml and xxltproc
  * with record of some odd tricks,
  * and xsl parsing cache for repeated transformations.
  * code convention https://www.php-fig.org/psr/psr-12/
  */
-class Xsl
+class Xt
 {
     /** XSLTProcessors */
     private static $transcache = array();
@@ -116,6 +116,16 @@ class Xsl
         $dom->preserveWhiteSpace = false;
         $dom->formatOutput = true;
         return $dom;
+    }
+
+    public static function elder(DOMNode $node): ?DOMElement
+    {
+        if(XML_ELEMENT_NODE != $node->nodeType ) return null;
+        if (!$node->hasChildNodes()) return null;
+        for ($i = 0, $count = $node->childNodes->count(); $i < $count; $i++) {
+            $el = $node->childNodes->item($i);
+            if(XML_ELEMENT_NODE == $el->nodeType) return $el; 
+        }
     }
 
     /**
@@ -296,4 +306,4 @@ class Xsl
         return $xpath;
     }
 }
-Xsl::init();
+Xt::init();
