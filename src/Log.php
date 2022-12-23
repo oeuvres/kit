@@ -24,7 +24,7 @@ class Log
 {
     const MAIN = "main";
     /** different channels to log in */
-    static private array $loggers = [];
+    static private $loggers = [];
 
     /**
      * System is unusable.

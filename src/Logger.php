@@ -35,15 +35,15 @@ abstract class Logger extends AbstractLogger
     /** Init counters */
     private const COUNTS_INIT = [0,0,0,0,0,0,0,0,0];
     /** Couters to record numbers of errors */
-    private array $counts = self::COUNTS_INIT;
+    private $counts = self::COUNTS_INIT;
     /** Last message */
-    private string $last = "";
+    private $last = "";
     /** Default prefix for message */
-    private string $prefix = "[{level}] "; 
+    private $prefix = "[{level}] "; 
     /** Default suffix for message (ex: clossing tag forr html) */
-    private string $suffix = ""; 
+    private $suffix = ""; 
     /** Default level of message to output */
-    private int $verbosity = 4;
+    private $verbosity = 4;
     /** Global duration */
     private $time_start = 0;
     /** Elapsed between log message */

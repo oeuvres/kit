@@ -20,27 +20,27 @@ Route::init();
 
 class Route {
     /** root directory of the app when outside site */
-    static private ?string $lib_dir;
+    static private $lib_dir;
     /** Href to app resources */
-    static private ?string $lib_href;
+    static private $lib_href;
     /** Home dir where is the index.php answering */
-    static private ?string $home_dir;
+    static private $home_dir;
     /** Home href for routing */
-    static private ?string $home_href;
+    static private $home_href;
     /** Default php template */
-    static private ?array $templates = [];
+    static private $templates = [];
     /** An html file to include as main */
-    static private ?string $main_inc;
+    static private $main_inc;
     /** A file to include */
-    static private ?string $main_contents;
+    static private $main_contents;
     /** Path relative to the root app */
-    static private ?string $url_request;
+    static private $url_request;
     /** Split of url parts */
-    static ?array $url_parts;
+    static $url_parts;
     /** The resource to deliver */
-    private static ?string $resource;
+    private static $resource;
     /** Has a routage been done ? */
-    static ?bool $routed;
+    static $routed;
 
     /**
      * Initialisation of static vatriables, done one time on initial loading 

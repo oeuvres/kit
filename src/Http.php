@@ -29,7 +29,7 @@ class Http
     /** relative path to base application, calculated with pathinfo */
     static $basehref;
     /** Content-Type header */
-    static ?array $mime;
+    static $mime;
     /** Langs */
     static $langs = array(
         "en" => "English",
