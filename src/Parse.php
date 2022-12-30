@@ -89,7 +89,7 @@ class Parse
             }
             // A variable to set
             $pref = '($';
-            if (substr($trim1, 0, strlen($pref)) === $pref) {
+            if (!count($search) && substr($trim1, 0, strlen($pref)) === $pref) {
                 // recursive replace ?
                 $var_replace[] = str_replace($var_search, $var_replace, $row[1]);
                 $var_search[] = $trim1;
