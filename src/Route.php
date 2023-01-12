@@ -194,7 +194,7 @@ class Route {
         self::$resource = $resource;
 
         $tmpl_php = null;
-        // default, no template registred, no temple requested, OK
+        // default, no template registred, no template requested, OK
         if ($tmpl_key === '' && count(self::$templates) < 1) {
         }
         // default, no template requested, send first if one exists
@@ -225,19 +225,8 @@ Use Route::template('tmpl_my.php', '$tmpl_key');"
         }
 
 
-        // no template, include html or php as direct
-        if ($tmpl_php == null && ($ext == 'php' || $ext == 'html' || $ext == 'htm')) {
-            include_once($resource);
-            exit();            
-        }
-        // html to include in template
-       else  if ($tmpl_php == null && ($ext == 'html' || $ext == 'htm')) {
-            self::$main_inc = $resource;
-            include_once($tmpl_php);
-            exit();            
-        }
         // php in template
-        else if ($ext == 'php') {
+        if ($tmpl_php !== null && $ext == 'php') {
             // capture content if it is php direct
             ob_start();
             include_once($resource);
@@ -246,7 +235,18 @@ Use Route::template('tmpl_my.php', '$tmpl_key');"
             include_once($tmpl_php);
             exit();            
         }
-        // static resource
+        // html in template
+        else  if ($tmpl_php !== null && ($ext == 'html' || $ext == 'htm')) {
+            self::$main_inc = $resource;
+            include_once($tmpl_php);
+            exit();            
+        }
+        // no template, include html or php as direct
+        if ($ext == 'php' || $ext == 'html' || $ext == 'htm') {
+            include_once($resource);
+            exit();            
+        }
+        // static resource like css or image, serve
         else {
             Http::readfile($resource);
             exit();
