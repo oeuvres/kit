@@ -35,6 +35,28 @@ class Filesys
     }
 
     /**
+     * Normalize dots in a path that may be relative
+     */
+    static function pathnorm($path) {
+        $path = str_replace('\\', '/', $path);
+        $root = ($path[0] === '/') ? '/' : '';
+
+        $segments = explode('/', trim($path, '/'));
+        $ret = array();
+        foreach($segments as $segment){
+            if (($segment == '.') || strlen($segment) === 0) {
+                continue;
+            }
+            if ($segment == '..') {
+                array_pop($ret);
+            } else {
+                array_push($ret, $segment);
+            }
+        }
+        return $root . implode('/', $ret);
+    }
+
+    /**
      * Check if a file is writable, if it does not exists
      * go to the parent folder to test if it is possible to create.
      * 
