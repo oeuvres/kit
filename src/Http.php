@@ -244,7 +244,7 @@ class Http
      */
     public static function pars(
         ?string $name = null,
-        ?string $default = null,
+        $default = null,
         ?string $pattern = null
         // ?string $cookie = null
     ) {
