@@ -244,10 +244,9 @@ class Http
      */
     public static function pars(
         ?string $name = null,
-        ?int $expire = 0,
-        ?string $pattern = null,
         ?string $default = null,
-        ?string $query = null
+        ?string $pattern = null
+        // ?string $cookie = null
     ) {
         // store params array extracted from query
         if (!self::$pars) {
@@ -260,7 +259,8 @@ class Http
         // no param for this name
         else $pars = array();
 
-
+        // TODO, cookie for multiple values
+        /*
         // no cookie store requested
         if (!$expire);
         // if empty ?, delete cookie
@@ -276,6 +276,7 @@ class Http
         }
         // if cookie stored, load it
         else if (isset($_COOKIE[$name])) $pars = unserialize($_COOKIE[$name]);
+        */
         // validate
         if ($pattern) {
             $newPars = array();
