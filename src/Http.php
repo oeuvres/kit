@@ -150,6 +150,25 @@ class Http
     }
 
     /**
+     * Get a parameter as an int between min-max
+     */
+    public static function int(
+        $name,
+        ?int $default = null,
+        ?int $min = null,
+        ?int $max = null,
+        ?string $cookie = null
+    ) {
+        $value = par($name, $default, null, $cookie);
+        if (!is_numeric($value)) return $default;
+        $value = intval($value);
+        if ($max && $value > $max) return $max;
+        if ($min && $value < $min) return $min;
+        return $value;
+    }
+
+
+    /**
      * Get a parameter as a single value 
      */
     public static function par(
