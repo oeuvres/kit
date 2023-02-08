@@ -159,7 +159,7 @@ class Http
         ?int $max = null,
         ?string $cookie = null
     ) {
-        $value = par($name, $default, null, $cookie);
+        $value = self::par($name, null, null, $cookie);
         if (!is_numeric($value)) return $default;
         $value = intval($value);
         if ($max && $value > $max) return $max;
