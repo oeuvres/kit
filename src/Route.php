@@ -41,6 +41,8 @@ class Route {
     private static $resource;
     /** Has a routage been done ? */
     static $routed;
+    /** A read/write set of key:value for communication between de Route users */
+    static private $atts = [];
 
     /**
      * Initialisation of static vatriables, done one time on initial loading 
@@ -375,6 +377,25 @@ Use Route::template('tmpl_my.php', '$tmpl_key');"
             },
             $pattern
         );
+        return $ret;
+    }
+
+    /**
+     * Get an attribute value
+     */
+    static public function getAtt($key)
+    {
+        if (!isset(self::$atts[$key])) return null;
+        return self::$atts[$key];
+    }
+    /**
+     * Set an attribute value
+     */
+    static public function setAtt($key, $value)
+    {
+        $ret = null;
+        if (isset(self::$atts[$key])) $ret = self::$atts[$key];
+        self::$atts[$key] = $value;
         return $ret;
     }
 
