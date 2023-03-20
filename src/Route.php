@@ -283,6 +283,7 @@ Use Route::template('tmpl_my.php', '$tmpl_key');"
      */
     public static function main(): void
     {
+
         // a static content to include
         if (self::$main_inc) {
             include_once(self::$main_inc);
@@ -295,7 +296,7 @@ Use Route::template('tmpl_my.php', '$tmpl_key');"
             return;
         }
         // a contents captured
-        if (isset(self::$main_cont)) {
+        if (isset(self::$main_cont) && self::$main_cont) {
             echo self::$main_cont;
             return;
         }
