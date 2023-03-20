@@ -31,8 +31,10 @@ class Route {
     static private $templates = [];
     /** An html file to include as main */
     static private $main_inc;
-    /** A file to include */
-    static private $main_contents;
+    /** A string or callable for contents */
+    static private $main_cont;
+    /** A title */
+    static private $title;
     /** Path relative to the root app */
     static private $url_request;
     /** Split of url parts */
@@ -162,14 +164,19 @@ class Route {
         if ($route == "/404") {
             http_response_code(404);
         }
-        // check route as a regex
-        else if (!self::match($route)) {
-            return false;
+        else {
+            $search = "@^" . trim($route, '^$') . "$@";
+            if(!preg_match($search, self::$url_request, $matches)) {
+                return false;
+            }
+            // rewrite resource according to the route capturing pattern
+            // be careful here 
+            if (strpos($resource, '$') !== false) {
+                for ($i = 1, $count = count($matches); $i < $count; $i++) {
+                    $resource =  str_replace('$'.$i, $matches[$i], $resource);
+                }
+            }
         }
-        // rewrite file destination according to $route url
-        $resource = preg_replace('@'.$route.'@', $resource, self::$url_request);
-
-
 
         if (!Filesys::isabs($resource)) {
             // resolve links from welcome page
@@ -195,17 +202,19 @@ class Route {
         self::$routed = true;
         self::$resource = $resource;
 
+        // choose a template in which embed content
         $tmpl_php = null;
-        // default, no template registred, no template requested, OK
+        // no template registred, no template requested, OK
         if ($tmpl_key === '' && count(self::$templates) < 1) {
         }
-        // default, no template requested, send first if one exists
+        // no template requested, send first one
         else if ($tmpl_key === '') {
             $tmpl_php = self::$templates[array_key_first(self::$templates)];
         }
         // explitly no template requested
         else if ($tmpl_key === null) {
         }
+        // inform developper there is a problem
         else {
             if (count(self::$templates) < 1) {
                 throw new Exception(
@@ -229,19 +238,32 @@ Use Route::template('tmpl_my.php', '$tmpl_key');"
 
         // php in template
         if ($tmpl_php !== null && $ext == 'php') {
-            // capture content if it is php direct
+            // capture content if it is direct php
             ob_start();
-            include_once($resource);
-            self::$main_contents = ob_get_contents();
+            $ok = include($resource);
+            // default return of an inlcude is true, allow script to do its tests and return false
+            if (!$ok) {
+                ob_end_clean();
+                return false;
+            }
+            self::$main_cont = ob_get_contents();
             ob_end_clean();
+            // maybe content, or a callable
+            if (isset($main)) {
+                self::$main_cont = $main;
+            }
+            if (isset($title)) {
+                self::$title = $title;
+            }
+            // include the template that will include teh content
             include_once($tmpl_php);
-            exit();            
+            exit();
         }
         // html in template
         else  if ($tmpl_php !== null && ($ext == 'html' || $ext == 'htm')) {
             self::$main_inc = $resource;
             include_once($tmpl_php);
-            exit();            
+            exit();
         }
         // no template, include html or php as direct
         if ($ext == 'php' || $ext == 'html' || $ext == 'htm') {
@@ -255,35 +277,32 @@ Use Route::template('tmpl_my.php', '$tmpl_key');"
         }
     }
 
-    /**
-     * Check if a route match url
-     */
-    public static function match($route):bool
-    {
-        if (substr($route, -1) == '$') {
-            $search = "@$route@";
-        }
-        else {
-            $search = "@^$route$@";
-        }
-        if(!preg_match($search, self::$url_request)) {
-            return false;
-        }
-        return true;
-    }
 
     /**
      * Populate a page with content
      */
     public static function main(): void
     {
-        echo Route::$main_contents;
-        if (function_exists('main')) {
-            call_user_func('main');
+        // a static content to include
+        if (self::$main_inc) {
+            include_once(self::$main_inc);
+            return;
         }
-        // a content to include here 
-        else if (Route::$main_inc) {
-            include_once(Route::$main_inc);
+        // a callable
+        if (isset(self::$main_cont) && is_callable(self::$main_cont)) {
+            $main = self::$main_cont; // found required to execute callable
+            echo $main();
+            return;
+        }
+        // a contents captured
+        if (isset(self::$main_cont)) {
+            echo self::$main_cont;
+            return;
+        }
+
+        // obsolete, global function can’t be redefined
+        if (function_exists('main')) {
+            echo call_user_func('main');
         }
     }
 
@@ -292,10 +311,18 @@ Use Route::template('tmpl_my.php', '$tmpl_key');"
      */
     public static function title($default=null): string
     {
-        if (function_exists('title')) {
-            $title = call_user_func('title');
-            if ($title) return $title;
+        $s = '';
+        if (isset(self::$title) && is_callable(self::$title)) {
+            $s = self::$title();
         }
+        else if (isset(self::$title)) {
+            $s = self::$title;
+        }
+        // very, very, obsolete
+        else if (function_exists('title')) {
+            $s = call_user_func('title');
+        }
+        if ($s) return $s;
         if ($default) {
             return $default;
         }
@@ -333,6 +360,18 @@ Use Route::template('tmpl_my.php', '$tmpl_key');"
         return '<a class="tab'. $selected . '"'
         . ' href="'. self::home_href(). $href . '"' 
         . '>' . $text . '</a>';
+    }
+
+    /**
+     * Check if a route match url
+     */
+    public static function match($route):bool
+    {
+        $search = "@^" . trim($route, '^$') . "$@";
+        if(!preg_match($search, self::$url_request)) {
+            return false;
+        }
+        return true;
     }
 
     /**
