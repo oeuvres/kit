@@ -14,7 +14,7 @@ namespace Oeuvres\Kit;
 
 Check::extension('xsl');
 
-use DOMDocument, DOMElement, DOMNode, DOMXPath, XSLTProcessor;
+use DOMDocument, DOMElement, DOMNode, DOMXPath, Error, XSLTProcessor;
 
 /**
  * A set of well configured method for XML manipulation with Libxml and xxltproc
@@ -235,7 +235,13 @@ class Xt
         if (isset($pars) && count($pars)) {
             foreach ($pars as $key => $value) {
                 if (!$value) $value = "";
-                $trans->setParameter("", $key, $value);
+                // do not warn if XSL has not the param
+                try{
+                    $trans->setParameter("", strval($key), strval($value));
+                }
+                catch (\Error $ex) { // Error is the base class for all internal PHP error exceptions.
+                    Log::debug("$xsl_file no <param name=\"$key\"/> to set with: $value");
+                }
             }
         }
         // return a DOM document for efficient piping
