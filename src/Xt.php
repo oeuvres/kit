@@ -235,13 +235,7 @@ class Xt
         if (isset($pars) && count($pars)) {
             foreach ($pars as $key => $value) {
                 if (!$value) $value = "";
-                // do not warn if XSL has not the param
-                try{
-                    $trans->setParameter("", strval($key), strval($value));
-                }
-                catch (\Error $ex) { // Error is the base class for all internal PHP error exceptions.
-                    Log::debug("$xsl_file no <param name=\"$key\"/> to set with: $value");
-                }
+                $trans->setParameter("", strval($key), strval($value));
             }
         }
         // return a DOM document for efficient piping
