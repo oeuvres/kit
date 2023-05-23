@@ -56,17 +56,38 @@ class Route {
         self::$lib_dir = dirname(__DIR__, 3). DIRECTORY_SEPARATOR ;
         $url_request = filter_var($_SERVER['REQUEST_URI'], FILTER_SANITIZE_URL);
         $url_request = strtok($url_request, '?'); // old
-        // maybe not robust, this should interpret path relative to the webapp
-        // domain.com/subdir/verbatim/path/perso -> /path/perso
-        $url_prefix = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
-        if ($url_prefix && strpos($url_request, $url_prefix) !== FALSE) {
-            $url_request = substr($url_request, strlen($url_prefix));
+
+
+        // get a path relative to app
+        // [REQUEST_URI] => /app_name/cat/resource
+        // $url_request = /cat/resource
+        // simple case, no redirection       
+        $php_prefix = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
+        if ($php_prefix && strpos($url_request, $php_prefix) !== FALSE) {
+            $url_request = substr($url_request, strlen($php_prefix));
         }
+        // other case, redirection app_name <> app_folder       
+        // [PHP_SELF] => /app_folder/index.php
+        // this rule suppose same level between app_name and app_folder 
+        else {
+            $slash_nb = substr_count($_SERVER['PHP_SELF'], '/');
+            for ($i = 0; $i < $slash_nb; $i++) {
+                $pos = strpos($url_request, '/');
+                // bad case
+                if ($pos === false) break;
+                $url_request = substr($url_request, $pos + 1);
+            }
+            $url_request = '/' . $url_request;
+        }
+
+        
         self::$url_request = $url_request;
         self::$url_parts = explode('/', ltrim($url_request, '/'));
         // quite robust on most server, work directory is the answering index.php
         self::$home_dir = getcwd() . DIRECTORY_SEPARATOR;
         self::$home_href = str_repeat('../', count(self::$url_parts) - 1);
+        if (!self::$home_href) self::$home_href = './';
+
         // get relative path from index.php caller to the root of app to calculate href for resources in this folder
         self::$lib_href = self::$home_href . Filesys::relpath(
             dirname($_SERVER['SCRIPT_FILENAME']), 
@@ -410,9 +431,9 @@ Use Route::template('tmpl_my.php', '$tmpl_key');"
                 if (!isset($values[$n])) {
                     return $var_match[0];
                 }
-                // ensure no slash, to dangerous
                 $filename = $values[$n]; 
-                $filename = preg_replace('@\.\.|/|\\\\@', '', $filename);
+                // shall we ensure no slash here ?  
+                // $filename = preg_replace('@\.\.|/|\\\\@', '', $filename);
                 return $filename;
             },
             $pattern
