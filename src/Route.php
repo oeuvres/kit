@@ -334,8 +334,12 @@ Use Route::template('tmpl_my.php', '$tmpl_key');"
     public static function title($default=null): string
     {
         $s = '';
+        // when php producer is loaded, a global variable $title is recorded in self::$title
+        // if $title is a callable, call it 
         if (isset(self::$title) && is_callable(self::$title)) {
-            $s = self::$title();
+            // bug php to execute a callable
+            $fun = self::$title;
+            $s = $fun();
         }
         else if (isset(self::$title)) {
             $s = self::$title;
