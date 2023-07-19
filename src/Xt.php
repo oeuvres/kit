@@ -290,7 +290,7 @@ class Xt
             ),
             // blanking a string, keeping new lines
             function ($matches) {
-                return preg_replace("/[^\n]/", " ", $matches[0]);
+                return preg_replace("/[^\n]/u", " ", $matches[0]);
             },
             $html
         );
