@@ -338,7 +338,7 @@ class Route {
         // end of tag
         $end = strpos(self::$html, "</$tag>", $start);
         if ($end === false) {
-            echo substr(self::$html, $tart +1);
+            echo substr(self::$html, $start +1);
         }
         else {
             echo substr(self::$html, $start+1, $end - $start - 1);
