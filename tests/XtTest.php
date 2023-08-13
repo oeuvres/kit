@@ -12,9 +12,7 @@ final class XtTest extends TestCase
 </test>
         ";
         $doc = Xt::loadXML($xml);
-        $search =  '/test/';
-        $replace = 'success';
-        Xt::replaceText($doc, $search, $replace);
+        Xt::replaceText($doc, '/test/', 'success');
         $this->assertXmlStringEqualsXmlString("<?xml version=\"1.0\"?>
 <test>
     <p>This a <i>success</i></p>
