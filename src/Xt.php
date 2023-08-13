@@ -65,6 +65,30 @@ class Xt
     }
 
     /**
+     * 
+     */
+    public static function replaceText(DOMNode &$node, &$search, &$replace)
+    {
+        $children = [];
+        foreach ($node->childNodes as $child)
+        {
+            $children[] = $child;
+        }
+        foreach($children as $child) {
+            
+            // recurs on elements
+            if ( $child->nodeType === XML_ELEMENT_NODE ) {
+                self::replaceText($child, $search, $replace);
+            }
+            if ( $child->nodeType != XML_TEXT_NODE ) continue;
+            $textOld = $child->wholeText;
+            $textNew = preg_replace($search, $replace, $textOld);
+            $textNodeNew = $node->ownerDocument->createTextNode($textNew);
+            $node->replaceChild($textNodeNew, $child);
+        }
+    }
+
+    /**
      * Output the informative libxml messages by the logger
      */
     public static function logLibxml(array $errors)
