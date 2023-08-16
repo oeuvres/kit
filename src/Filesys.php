@@ -89,6 +89,9 @@ class Filesys
      */
     public static function isabs(string $path): bool
     {
+        if (!$path) {
+            return false;
+        }
         // true if file exists
         if (realpath($path) == $path) {
             return true;
@@ -386,16 +389,6 @@ class Filesys
             $zip->addEmptyDir($entryPath);
             self::zipDir($zip, $srcPath, $entryPath);
         }
-    }
-
-    /**
-     * Is file path absolute ?
-     */
-    static function isPathAbs($path)
-    {
-        if (!$path) return false;
-        if ($path[0] === DIRECTORY_SEPARATOR || preg_match('~\A[A-Z]:(?![^/\\\\])~i', $path) > 0) return true;
-        return false;
     }
 
     /**
