@@ -237,7 +237,7 @@ class Filesys
     {
         // nothing to delete, go away
         if (!file_exists($path)) {
-            Log::debug("Path not found, remove impossible:\n\"$dir\"");
+            Log::debug("Path not found, remove impossible:\n\"$path\"");
             return true;
         }
         $log = [];
@@ -282,7 +282,7 @@ class Filesys
         // if dir not kept, and no more logged error, container could be deleted 
         if (!$keep && count($log) == $count) {
             if (true !== rmdir($path)) {
-                $log[] = "Dir empty but impossible to remove:\n\"$dir\"";
+                $log[] = "Dir empty but impossible to remove:\n\"$path\"";
             }
         }
     }
