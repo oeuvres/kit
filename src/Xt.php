@@ -67,13 +67,31 @@ class Xt
     /**
      * 
      */
-    public static function replaceText(DOMNode &$node, $search, $replace)
-    {
-        self::replaceRecurs($node, $search, $replace);
+    public static function replaceText(
+        DOMNode &$node, 
+        $search, 
+        $replace, 
+        $exclude=[], 
+        $include=[]
+    ) {
+        $exclude = array_flip($exclude);
+        $include = array_flip($include);
+        self::replaceRecurs(
+            $node, 
+            $search, 
+            $replace,
+            $exclude,
+            $include,
+        );
     }
 
-    private static function replaceRecurs(DOMNode &$node, &$search, &$replace)
-    {
+    private static function replaceRecurs(
+        DOMNode &$node, 
+        &$search, 
+        &$replace,
+        &$exclude=[], 
+        &$include=[]
+    ) {
         $children = [];
         foreach ($node->childNodes as $child)
         {
@@ -82,9 +100,20 @@ class Xt
         foreach($children as $child) {
             // recurs on elements
             if ( $child->nodeType === XML_ELEMENT_NODE ) {
-                self::replaceRecurs($child, $search, $replace);
+                $name = $child->tagName;
+                // not an included element
+                if (count($include) and !isset($include[$name])) {
+                    continue;
+                }
+                // excluded element
+                if (count($exclude) and isset($exclude[$name])) {
+                    continue;
+                }
+                self::replaceRecurs($child, $search, $replace, $exclude, $include);
             }
-            if ( $child->nodeType != XML_TEXT_NODE ) continue;
+            if ( $child->nodeType != XML_TEXT_NODE ) {
+                continue;
+            }
             $textOld = $child->wholeText;
             $textNew = preg_replace($search, $replace, $textOld);
             $textNodeNew = $node->ownerDocument->createTextNode($textNew);
