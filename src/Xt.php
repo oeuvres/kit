@@ -61,6 +61,7 @@ class Xt
         self::logLibxml(libxml_get_errors());
         if (!$ret) return null;
         $dom->documentURI = realpath($src_file);
+        $dom->xinclude(); // resolve xincludes
         return $dom;
     }
 
@@ -152,14 +153,18 @@ class Xt
     /**
      * Returns a DOM object
      */
-    public static function loadXml(string $xml, ?DOMDocument $dom = null): ?DOMDocument
+    public static function loadXml(string $xml, ?DOMDocument $doc = null): ?DOMDocument
     {
-        if ($dom == null) $dom = self::dom();
+        if ($doc == null) $doc = self::dom();
         // suspend error reporting, libxml messages are better
-        $ret = $dom->loadXml($xml, self::LIBXML_OPTIONS);
+        $ret = $doc->loadXml($xml, self::LIBXML_OPTIONS);
         self::logLibxml(libxml_get_errors());
         if (!$ret) return null;
-        return $dom;
+        // if default documentURI is working directory, not a file
+        if (is_file($doc->documentURI)) {
+            $doc->xinclude(); // resolve xincludes
+        }
+        return $doc;
     }
 
 
