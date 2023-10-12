@@ -34,6 +34,7 @@ class Xt
             | LIBXML_NONET
             | LIBXML_NSCLEAN
             | LIBXML_NOCDATA
+            | LIBXML_PARSEHUGE
          // | LIBXML_NOWARNING  // ? hide warn for <?xml-model
     ;
 
