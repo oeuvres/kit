@@ -371,5 +371,38 @@ class Xt
         }
         return $xpath;
     }
+
+    /**
+     * get XML from a dom sent by xsl
+     */
+    static function nodesetXML($nodeset, $inner = false)
+    {
+        $xml = '';
+        if (!is_array($nodeset)) $nodeset = array($nodeset);
+        foreach ($nodeset as $doc) {
+            if($doc->firstChild === null) {
+                continue;
+            }
+            if (get_class($doc->firstChild) === 'DOMText') {
+                $xml .= $doc->textContent;
+                continue;
+            }
+            // if (!$doc->textContent) // not seen after upper
+            $doc->formatOutput = true;
+            $doc->substituteEntities = true;
+            $doc->encoding = "UTF-8";
+            $doc->normalize();
+            $xml .= $doc->saveXML($doc->documentElement);
+        }
+        if (!$xml) return null;
+        // del root ns for include (?)
+        $xml = preg_replace('@ xmlns="http://www.w3.org/1999/xhtml"@', '', $xml);
+        // cut the root element
+        if ($inner) {
+            $xml = substr($xml, strpos($xml, '>') + 1);
+            $xml = substr($xml, 0, strrpos($xml, '<'));
+        }
+        return $xml;
+    }
 }
 Xt::init();
