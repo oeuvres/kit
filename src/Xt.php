@@ -228,16 +228,16 @@ class Xt
     /**
      * xsl:tranform, result to a file
      */
-    public static function transformToUri(
+    public static function transformToURI(
         string $xslfile,
         DOMDocument $DOM,
-        string $uri,
+        string $URI,
         ?array $pars = null
     ) {
         return self::transform(
             $xslfile,
             $DOM,
-            $uri,
+            $URI,
             $pars
         );
     }
