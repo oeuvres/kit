@@ -55,15 +55,15 @@ class Xt
             Log::error("XML file not loaded");
             return null;
         }
-        $dom = self::dom();
-        // $dom->recover=true; // no recover, display errors
+        $DOM = self::DOM();
+        // $DOM->recover=true; // no recover, display errors
         // suspend error reporting, libxml messages are better
-        $ret = @$dom->load($src_file, self::LIBXML_OPTIONS);
+        $ret = @$DOM->load($src_file, self::LIBXML_OPTIONS);
         self::logLibxml(libxml_get_errors());
         if (!$ret) return null;
-        $dom->documentURI = realpath($src_file);
-        $dom->xinclude(); // resolve xincludes
-        return $dom;
+        $DOM->documentURI = realpath($src_file);
+        $DOM->xinclude(); // resolve xincludes
+        return $DOM;
     }
 
     /**
@@ -156,7 +156,7 @@ class Xt
      */
     public static function loadXML(string $xml, ?DOMDocument $doc = null): ?DOMDocument
     {
-        if ($doc == null) $doc = self::dom();
+        if ($doc == null) $doc = self::DOM();
         // suspend error reporting, libxml messages are better
         $ret = $doc->loadXML($xml, self::LIBXML_OPTIONS);
         self::logLibxml(libxml_get_errors());
@@ -170,15 +170,15 @@ class Xt
 
 
     /**
-     * Returns an empty dom with nice options for indented xsl
+     * Returns an empty DOM with nice options for indented xsl
      */
-    public static function dom(): DOMDocument
+    public static function DOM(): DOMDocument
     {
-        $dom = new DOMDocument();
-        $dom->substituteEntities = true;
-        $dom->preserveWhiteSpace = false;
-        $dom->formatOutput = true;
-        return $dom;
+        $DOM = new DOMDocument();
+        $DOM->substituteEntities = true;
+        $DOM->preserveWhiteSpace = false;
+        $DOM->formatOutput = true;
+        return $DOM;
     }
 
     /**
@@ -195,16 +195,16 @@ class Xt
     }
 
     /**
-     * xsl:tranform, result as a dom document
+     * xsl:tranform, result as a DOM document
      */
-    public static function transformToDoc(
+    public static function transformToDOM(
         string $xslfile,
-        DOMDocument $dom,
+        DOMDocument $DOM,
         ?array $pars = null
     ) {
         return self::transform(
             $xslfile,
-            $dom,
+            $DOM,
             null, // local code to say not a a string
             $pars
         );
@@ -215,12 +215,12 @@ class Xt
      */
     public static function transformToXML(
         string $xslfile,
-        DOMDocument $dom,
+        DOMDocument $DOM,
         ?array $pars = null
     ) {
         return self::transform(
             $xslfile,
-            $dom,
+            $DOM,
             "", // local code to say fill the string
             $pars
         );
@@ -230,13 +230,13 @@ class Xt
      */
     public static function transformToUri(
         string $xslfile,
-        DOMDocument $dom,
+        DOMDocument $DOM,
         string $uri,
         ?array $pars = null
     ) {
         return self::transform(
             $xslfile,
-            $dom,
+            $DOM,
             $uri,
             $pars
         );
@@ -247,7 +247,7 @@ class Xt
      */
     private static function transform(
         string $xsl_file,
-        DOMDocument $dom,
+        DOMDocument $DOM,
         ?string $dst = null,
         ?array $pars = null
     ) {
@@ -283,13 +283,13 @@ class Xt
                 ini_set("xsl.security_prefs",  $prefs);
             }
             // for xsl through http://, allow net download of resources 
-            $xsldom = new DOMDocument();
-            if (false === $xsldom->load($xsl_file)) {
+            $xslDOM = new DOMDocument();
+            if (false === $xslDOM->load($xsl_file)) {
                 self::logLibxml(libxml_get_errors());
                 Log::error("$pref load impossible:\n\"$xsl_file\"");
                 return false;
             }
-            if (!$trans->importStyleSheet($xsldom)) {
+            if (!$trans->importStyleSheet($xslDOM)) {
                 self::logLibxml(libxml_get_errors());
                 Log::error("$pref compile impossible:\n\"$xsl_file\"");
                 return false;
@@ -306,16 +306,16 @@ class Xt
         }
         // return a DOM document for efficient piping
         if ($dst === null) {
-            $ret = $trans->transformToDoc($dom);
+            $ret = $trans->transformToDoc($DOM);
         }
         // return XML as a string
         else if ($dst === '') {
-            $ret = $trans->transformToXML($dom);
+            $ret = $trans->transformToXML($DOM);
         }
         // write to uri
         else {
             Filesys::mkdir(dirname($dst));
-            $trans->transformToUri($dom, $dst);
+            $trans->transformToUri($DOM, $dst);
             $ret = $dst;
         }
         // here we should have XSL message only
@@ -361,19 +361,19 @@ class Xt
     }
 
     /**
-     * Get an xpath processor from a dom with registred namespaces for root
+     * Get an xpath processor from a DOM with registred namespaces for root
      */
-    static public function xpath(DOMDocument $dom): DOMXPath
+    static public function xpath(DOMDocument $DOM): DOMXPath
     {
-        $xpath = new DOMXPath($dom);
-        foreach ($xpath->query('namespace::*', $dom->documentElement) as $node) {
+        $xpath = new DOMXPath($DOM);
+        foreach ($xpath->query('namespace::*', $DOM->documentElement) as $node) {
             $xpath->registerNamespace($node->prefix, $node->namespaceURI);
         }
         return $xpath;
     }
 
     /**
-     * get XML from a dom sent by xsl
+     * get XML from a DOM sent by xsl
      */
     static function nodesetXML($nodeset, $inner = false)
     {
