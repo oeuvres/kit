@@ -154,11 +154,11 @@ class Xt
     /**
      * Returns a DOM object
      */
-    public static function loadXml(string $xml, ?DOMDocument $doc = null): ?DOMDocument
+    public static function loadXML(string $xml, ?DOMDocument $doc = null): ?DOMDocument
     {
         if ($doc == null) $doc = self::dom();
         // suspend error reporting, libxml messages are better
-        $ret = $doc->loadXml($xml, self::LIBXML_OPTIONS);
+        $ret = $doc->loadXML($xml, self::LIBXML_OPTIONS);
         self::logLibxml(libxml_get_errors());
         if (!$ret) return null;
         // if default documentURI is working directory, not a file
@@ -213,7 +213,7 @@ class Xt
     /**
      * xsl:tranform, result as an XML string
      */
-    public static function transformToXml(
+    public static function transformToXML(
         string $xslfile,
         DOMDocument $dom,
         ?array $pars = null
@@ -310,7 +310,7 @@ class Xt
         }
         // return XML as a string
         else if ($dst === '') {
-            $ret = $trans->transformToXml($dom);
+            $ret = $trans->transformToXML($dom);
         }
         // write to uri
         else {
