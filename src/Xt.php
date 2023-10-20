@@ -395,8 +395,8 @@ class Xt
             $xml .= $doc->saveXML($doc->documentElement);
         }
         if (!$xml) return null;
-        // del root ns for include (?)
-        $xml = preg_replace('@ xmlns="http://www.w3.org/1999/xhtml"@', '', $xml);
+        // do not del root ns here
+        // $xml = preg_replace('@ xmlns="http://www.w3.org/1999/xhtml"@', '', $xml);
         // cut the root element
         if ($inner) {
             $xml = substr($xml, strpos($xml, '>') + 1);
