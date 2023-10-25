@@ -54,8 +54,8 @@ class Select
     }
     /** Add a value */
     function add(
-        bool $checked, 
         string $value, 
+        ?bool $checked, 
         ?string $label=null,
         ?string $title=null
     ): Select
@@ -84,8 +84,11 @@ class Select
         if (!count($this->options)) {
             return '';
         }
-        if ($this->type == self::CHECKBOX) {
+        else if ($this->type == self::CHECKBOX) {
             return $this->checkbox();
+        }
+        else if ($this->type == self::RADIO) {
+            return $this->radio();
         }
         else {
             return $this->select();
@@ -148,7 +151,7 @@ class Select
             $html .= '
     <span class="radio">
         <input onchange="this.form.submit()" type="radio" id="' . $id . '" name="' . $this->name 
-            . '" value="' . $row['value'] . '"' 
+            . '" value="' . $value . '"' 
             . $checked . '/>
         <label class="radio" for="' . $id . '">' . $row['label'] . '</label>
     </span>
