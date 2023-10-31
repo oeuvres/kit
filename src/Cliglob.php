@@ -25,6 +25,8 @@ abstract class Cliglob
     const DST_FORMAT = self::DST_FORMAT;
     /** A destination extension for generated files */
     const DST_EXT = self::DST_EXT;
+    /** An optional destination prefix */
+    const DST_PREFIX = "";
 
     /**
      * Parse command line arguments and process files
@@ -109,7 +111,7 @@ OPTIONS
             $dst_dir = Filesys::normdir(static::$options['d']);
         }
         $dst_name =  pathinfo($src_file, PATHINFO_FILENAME);
-        $dst_file = $dst_dir . $dst_name . static::DST_EXT;
+        $dst_file = $dst_dir . static::DST_PREFIX . $dst_name . static::DST_EXT;
         return $dst_file;
 
     }
