@@ -37,10 +37,11 @@ abstract class Cliglob
         $shortopts = "";
         $shortopts .= "h"; // help message
         $shortopts .= "f"; // force transformation
+        $shortopts .= "v"; // verbose messages
         $shortopts .= "d:"; // output directory
         $shortopts .= "t:"; // template file
         $rest_index = null;
-        static::$options = getopt($shortopts, ["io"=>56], $rest_index);
+        static::$options = getopt($shortopts, [], $rest_index);
         $pos_args = array_slice($argv, $rest_index);
         if (count($pos_args) < 1) {
             exit(static::help());
@@ -86,7 +87,7 @@ abstract class Cliglob
         list($called) = get_included_files();
         $help = "
 Tranform ".static::SRC_FORMAT." files in ".static::DST_FORMAT."
-    php ".basename($called)." (options)* \"src_dir/*.".static::SRC_EXT."\"
+    php ".basename($called)." (options)* \"src_dir/*".static::SRC_EXT."\"
 
 PARAMETERS
 globs           : + files or globs
@@ -96,6 +97,7 @@ OPTIONS
 -f              : ? force deletion of destination file (no test of freshness)
 -d dst_dir      : ? destination directory for generated files
 -t template".static::DST_EXT." : * template files
+-v              : ? verbose mode
 ";
         return $help;
     }
