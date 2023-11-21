@@ -46,7 +46,12 @@ abstract class Cliglob
         if (count($pos_args) < 1) {
             exit(static::help());
         }
-        Log::setLogger(new LoggerCli(LogLevel::DEBUG));
+        if (isset(static::$options['v'])) {
+            Log::setLogger(new LoggerCli(LogLevel::DEBUG));
+        }
+        else {
+            Log::setLogger(new LoggerCli(LogLevel::INFO));
+        }
         // loop on arguments to get files of globs
         foreach ($pos_args as $arg) {
             $glob = glob($arg);
