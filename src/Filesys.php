@@ -358,6 +358,7 @@ class Filesys
     static function loadURL($url, $baseDir = null)
     {
         if (!$url) return null;
+        if ($baseDir) $baseDir = ltrim($baseDir, '/\\') . '/';
         $data = [
             "bytes" => null,
             "ext" => null,
