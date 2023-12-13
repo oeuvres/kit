@@ -90,6 +90,25 @@ final class BitSetTest
         return round($seconds,2).' s.';
     }
 
+    public static function test()
+    {
+        foreach (["BitBool", "BitInt", "BitIntFull", "BitString"] as $className) {
+            echo str_pad($className, 15);
+            $obj = 'Oeuvres\Kit\Bitset\\'.$className;
+            $bitSet = new $obj();
+            $set = [64, 65, 193, 250, 251, 255, 2048];
+            echo implode(',', $set) . "  ";
+            foreach ($set as $bit) $bitSet->set($bit);
+            $n = 10;
+            foreach ($bitSet as $key => $bit) {
+                echo " $key:$bit";
+                if (!--$n) break; 
+            }
+            echo "\n";
+        }
+    }
+
 }
-BitSetTest::b64();
+BitSetTest::test();
+// BitSetTest::b64();
 // BitSetTest::bench();

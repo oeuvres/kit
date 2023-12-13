@@ -26,6 +26,10 @@ class BitString extends BitSet
      * Allocated chars
      */
     private int $charAlloc = 8;
+    /**
+     * For iterator
+     */
+    private int $itChar = -1;
 
 
     public function __construct()
@@ -140,4 +144,66 @@ class BitString extends BitSet
         return trim($bin);
     }
 
+    public function rewind(): void
+    {
+        $this->itChar = 0;
+        $this->itKey = 0;
+        do {
+            if ($this->itChar >= $this->charLength) {
+                $this->itValid = false;
+                return;
+            }
+            if ($this->data[$this->itChar] !== "\00") break;
+            $this->itChar++;
+        } while (true);
+        $this->itValid = true;
+        $this->itBit = $this->itChar << 3;
+        $bitMask = 1;
+        $ord = ord($this->data[$this->itChar]);
+        do {
+            if (($ord & $bitMask) != 0) {
+                return;
+            }
+            $this->itBit++;
+            $bitMask <<= 1;
+        } while ($bitMask != 0);
+        // should not arrive
+    }
+
+    public function next(): void
+    {
+        // loop in strinbg with holes
+        $bitIndex = $this->itBit;
+        // search after current value
+        $bitIndex++;
+        // ensure char index
+        $this->itChar = $bitIndex >> 3;
+        $bitMask = 1 << ($bitIndex%8);
+        do {
+            // echo " char=" . $this->itChar. " charLength=" . $this->charLength;
+            if ($this->itChar >= $this->charLength) {
+                $this->itValid = false;
+                return;
+            }
+            if ($this->data[$this->itChar] === "\00") {
+                // echo " " . $this->itChar . "=".ord($this->data[$this->itChar]);
+                $this->itChar++;
+                $bitMask = 1; // reset possible bitMask
+                continue;
+            }
+            $ord = ord($this->data[$this->itChar]);
+            while ($bitMask != 0) {
+                if (($ord & $bitMask) != 0) {
+                    // remember () !!
+                    $this->itBit = ($this->itChar << 3) + self::BIT_POS[$bitMask];
+                    $this->itKey++;
+                    return;
+                }
+                $bitMask <<= 1; // become 0 when last bit is shifted
+            }
+            $this->itChar++;
+            $bitMask = 1; // reset bitMask
+        } while (true);
+        // char should be not null here
+    }
 }

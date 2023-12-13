@@ -14,6 +14,8 @@ use InvalidArgumentException, OutOfRangeException;
 
 class BitBool extends BitSet
 {
+    const ZERO = 0;
+    const ONE = 1;
     /**
      * Array of booleans
      */
@@ -29,7 +31,7 @@ class BitBool extends BitSet
         if ($bitIndex < 0) {
             throw new OutOfRangeException("\$bitIndex={$bitIndex}, negative index not supported");
         }
-        $this->data[$bitIndex] = true;
+        $this->data[$bitIndex] = SELF::ONE;
         $this->length = max($this->length, ++$bitIndex);
     }
 
@@ -132,5 +134,34 @@ class BitBool extends BitSet
         return $this->length;
     }
 
-    
+    public function rewind(): void
+    {
+        $value = reset($this->data);
+        while(!$value) {
+            // caution, false is reserved as end reach
+            if ($value === false) {
+                $this->itValid = false;
+                return;
+            }
+            $value = next($this->data);
+        }
+        $this->itValid = true;
+        $this->itKey = 0;
+        $this->itBit = key($this->data);
+    }
+
+    public function next(): void
+    {
+        $value = next($this->data);
+        while(!$value) {
+            // caution, false is reserved as end reach
+            if ($value === false) {
+                $this->itValid = false;
+                return;
+            }
+            $value = next($this->data);
+        }
+        $this->itKey++;
+        $this->itBit = key($this->data);
+    }
 }

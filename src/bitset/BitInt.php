@@ -83,7 +83,7 @@ class BitInt extends BitSet
             return false;
             
         }
-        $bitMask = 1 << ($bitIndex % 64);
+        $bitMask = 1 << ($bitIndex % self::$intModulo);
         return boolval($this->data[$intIndex] & $bitMask);
     }
 
@@ -164,6 +164,76 @@ class BitInt extends BitSet
         }
         $this->length = $charLen << 3;
         $this->data = $data;
+    }
+
+    public function rewind(): void
+    {
+        $this->itValid = false;
+        $this->itKey = -1;
+        $this->itBit = -1;
+        $word = reset($this->data);
+        while(!$word) {
+            if ($word === false) {
+                return;
+            }
+            $word = next($this->data);
+        }
+        $this->itValid = true;
+        $this->itKey = 0;
+        $intIndex = key($this->data);
+        $this->itBit = $intIndex << self::$intShift;
+        // find first set bit, should have one
+        $bitMask = 1;
+        do {
+            if (($word & $bitMask) != 0) {
+                return;
+            }
+            $this->itBit++;
+            $bitMask <<= 1;
+        } while ($bitMask != 0);
+        // Should not arrive
+    }
+
+    public function next(): void
+    {
+        // loop in array with holes
+        $bitIndex = $this->itBit;
+        // search after current value
+        $bitIndex++;
+        $bitMask = 1 << ($bitIndex % self::$intModulo);
+        // first bit of next word
+        if ($bitMask === 1) {
+            $word = next($this->data);
+        }
+        else {
+            $word = current($this->data);
+        }
+        do {
+            // end of data, go out
+            if ($word === false) {
+                $this->itValid = false;
+                return;
+            }
+                // empty word, go next
+            if ($word === 0) {
+                $word = next($this->data);
+                $bitMask = 1; // reset possible bitMask
+                continue;
+            }
+            while ($bitMask != 0) {
+                if (($word & $bitMask) != 0) {
+                    // log2(bitMask) will bug with the last bit, in is signed
+                    $this->itBit = 
+                        (key($this->data) << self::$intShift) 
+                        + self::BIT_POS[$bitMask];
+                    $this->itKey++;
+                    return;
+                }
+                $bitMask <<= 1; // become 0 when last bit is shifted
+            }
+            $bitMask = 1; // reset bitMask
+            $word = next($this->data);
+        } while(true);
     }
 
 }
