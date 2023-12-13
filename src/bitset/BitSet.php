@@ -144,24 +144,24 @@ abstract class BitSet implements Iterator
     /**
      * Import bits from a binary string of bytes
      */
-    abstract public function fromBytes(string $bytes): void;
+    abstract public function fromBytes(string $bytes): bool;
     /**
      * From Base 64 import bytes
      */
-    public function fromBase64(string $base64=null): void
+    public function fromBase64(string $base64=null): bool
     {
         if (empty($base64)) {
             $this->length = 0;
             $this->fromBytes('');
-            return;
+            return true;
         }
         // maybe a base64 URL compat
         $base64 = strtr($base64, '-_', '+/');
         $bytes = base64_decode($base64, true);
         if ($bytes === false) {
-            throw new InvalidArgumentException("Invalid base64 string: $base64");
+            return false;
         }
-        $this->fromBytes($bytes);
+        return $this->fromBytes($bytes);
     }
 
     /**

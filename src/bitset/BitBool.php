@@ -89,11 +89,11 @@ class BitBool extends BitSet
         return $chars;
     }
 
-    public function fromBytes(string $bytes = null): void
+    public function fromBytes(string $bytes = null): bool
     {
         if (empty($bytes)) {
             $this->data = [];
-            return;
+            return false;
         }
 
         $this->data = [];
@@ -102,15 +102,16 @@ class BitBool extends BitSet
             $bitIndex = $charIndex << 3;
             $c = ord($bytes[$charIndex]);
             if ($c === 0) continue;
-            if ($c&1  ) $this->data[$bitIndex + 0] = true;
-            if ($c&2  ) $this->data[$bitIndex + 1] = true;
-            if ($c&4  ) $this->data[$bitIndex + 2] = true;
-            if ($c&8  ) $this->data[$bitIndex + 3] = true;
-            if ($c&16 ) $this->data[$bitIndex + 4] = true;
-            if ($c&32 ) $this->data[$bitIndex + 5] = true;
-            if ($c&64 ) $this->data[$bitIndex + 6] = true;
-            if ($c&128) $this->data[$bitIndex + 7] = true;
+            if ($c&1  ) $this->data[$bitIndex + 0] = self::ONE;
+            if ($c&2  ) $this->data[$bitIndex + 1] = self::ONE;
+            if ($c&4  ) $this->data[$bitIndex + 2] = self::ONE;
+            if ($c&8  ) $this->data[$bitIndex + 3] = self::ONE;
+            if ($c&16 ) $this->data[$bitIndex + 4] = self::ONE;
+            if ($c&32 ) $this->data[$bitIndex + 5] = self::ONE;
+            if ($c&64 ) $this->data[$bitIndex + 6] = self::ONE;
+            if ($c&128) $this->data[$bitIndex + 7] = self::ONE;
         }
+        return true;
     }
 
     /**

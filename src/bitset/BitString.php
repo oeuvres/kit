@@ -120,13 +120,14 @@ class BitString extends BitSet
         return substr($this->data, 0, $this->charLength);
     }
 
-    public function fromBytes(string $bytes = null): void {
+    public function fromBytes(string $bytes = null): bool {
         if (empty($bytes)) {
             $this->data = '';
         }
         else {
             $this->data = $bytes;
         }
+        return true;
     }
 
     /**

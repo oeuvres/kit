@@ -120,11 +120,11 @@ class BitInt extends BitSet
         return substr($chars, 0, ($this->length + 7) >> 3);
     }
 
-    public function fromBytes(string $bytes = null): void
+    public function fromBytes(string $bytes = null): bool
     {
         if (empty($bytes)) {
             $this->data = [];
-            return;
+            return true;
         }
         $full = (get_class($this) == 'Oeuvres\Kit\Bitset\BitIntFull');
         $charLen = strlen($bytes);
@@ -164,6 +164,7 @@ class BitInt extends BitSet
         }
         $this->length = $charLen << 3;
         $this->data = $data;
+        return true;
     }
 
     public function rewind(): void
