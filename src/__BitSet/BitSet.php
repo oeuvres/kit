@@ -8,7 +8,7 @@
  * BSD-3-Clause https://opensource.org/licenses/BSD-3-Clause
  */
 
-namespace Oeuvres\Kit\Bitset;
+namespace Oeuvres\Kit\BitSet;
  
 use InvalidArgumentException, Iterator;
 
