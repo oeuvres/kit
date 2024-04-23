@@ -26,6 +26,7 @@ class Filesys
      */
     static function normdir($dir)
     {
+        $dir = trim($dir);
         if (!$dir) return $dir;
         $dir = rtrim(trim($dir), "\\/");
         if (!$dir) {
