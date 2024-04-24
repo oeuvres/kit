@@ -15,7 +15,7 @@ use Psr\Log\LogLevel;
 
 /**
  * A PSR-3 compliant logger as light as possible
- * Used for CLI 
+ * Used to output messages of apps in dev.
  *
  * @see https://www.php-fig.org/psr/psr-3/
  */

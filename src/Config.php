@@ -54,6 +54,16 @@ class Config
         return self::$config[$name] = $value;
         return $ret;
     }
+    /**
+     * Display content of config
+     */
+    static public function toString() {    
+        $output = '';    
+        foreach(self::$config as $key => $value) {
+            $output .= "$key=\"$value\",\n";
+        }    
+        return rtrim($output, ",\n");
+    }
 }
 
 Config::init();
