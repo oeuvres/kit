@@ -263,8 +263,8 @@ class Route {
         }
         // php resource
         if ($ext == 'php') {
-            // if a page forgot to close a buffer, flush it
-            @ob_end_flush();
+            // if a page forgot to close a buffer, flush it ?
+            // @ob_end_flush();
             // capture content produced by php if generators are not encapsulated 
             ob_start();
             $ok = include($resource);
