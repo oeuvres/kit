@@ -204,7 +204,8 @@ class Route {
             // rewrite resource according to the route capturing pattern
             // security issue, if a Route user is asking php file by url
             if (strpos($resource, '$') !== false) {
-                for ($i = 1, $count = count($matches); $i < $count; $i++) {
+                // $0 maybe used sometimes 
+                for ($i = 0, $count = count($matches); $i < $count; $i++) {
                     $resource =  str_replace('$'.$i, $matches[$i], $resource);
                 }
             }
