@@ -300,8 +300,15 @@ class Xt
         // add params
         if (isset($pars) && count($pars)) {
             foreach ($pars as $key => $value) {
-                if (!$value) $value = "";
-                $trans->setParameter("", strval($key), strval($value));
+                if (!$value) {
+                    $value = "";
+                }
+                $value = strval($value);
+                // bug: Cannot create XPath expression (string contains both quote and double-quotes)
+                if (strpos($value, '"') !== false && strpos($value, "'") !== false ) {
+                    $value = str_replace("'", "&#39;", $value);
+                }
+                $trans->setParameter("", strval($key), $value);
             }
         }
         // return a DOM document for efficient piping
