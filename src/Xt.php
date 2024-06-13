@@ -49,14 +49,15 @@ class Xt
     /**
      * Get a DOM document with best options from a file path
      */
-    public static function load(string $src_file): ?DOMDocument
+    public static function load(string $src_file, ?DOMDocument $DOM = null): ?DOMDocument
     {
         if (!Filesys::readable($src_file)) {
             Log::error("XML file not loaded");
             return null;
         }
-        $DOM = self::DOM();
-        // $DOM->recover=true; // no recover, display errors
+        if (!$DOM) {
+            $DOM = self::DOM();
+        }
         // suspend error reporting, libxml messages are better
         $ret = @$DOM->load($src_file, self::LIBXML_OPTIONS);
         self::logLibxml(libxml_get_errors());
