@@ -122,7 +122,7 @@ OPTIONS
 -h              : ? print this help
 -f              : ? force deletion of destination file (no test of freshness)
 -d dst_dir      : ? destination directory for generated files
--t template" . self::get('dst_ext') . " : * template files
+-t template     : * template files
 -v              : ? verbose mode
 ";
         return $help;
