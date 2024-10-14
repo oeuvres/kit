@@ -365,13 +365,17 @@ class Filesys
             "ext" => null,
             "name" => null,
         ];
-        $scheme = parse_url($url, PHP_URL_SCHEME);
+        preg_match('@([a-z]+):@', $url, $matches);
+        $scheme = @$matches[1];
         if ($scheme == 'data') {
             // data:image/png;base64,AAAFBfj42Pj4
             // 0123456789 123456789 123456789
             $col_pos = strpos($url, ';');
             if (substr($url, $col_pos + 1, 6) != 'base64') {
-                Log::warning(substr($url, 30) . "… seems not encoded in base64");
+                Log::warning(
+                    "Filesys::loadURL(" . substr($url, 30) . "…), "
+                    . "seems not encoded in base64"
+                );
                 return null;
             }
             $slash_pos = strpos($url, '/');
@@ -382,8 +386,8 @@ class Filesys
             if ($data['bytes'] === false) {
                 $error = error_get_last();
                 Log::warning(
-                    substr($url, 30) 
-                    . "… base64 decoding failed: "
+                    "Filesys::loadURL(" . substr($url, 30) . "…), "
+                    . "base64 decoding failed: "
                     . $error['message']
                 );
                 return null;
@@ -393,8 +397,8 @@ class Filesys
         // should work for 
         else {
             $path4name = $url;
-            if (in_array($scheme, ['zip'])) {
-                $path4name = parse_url($url, PHP_URL_FRAGMENT);
+            if (in_array($scheme, ['zip']) && strrpos($url, '#') !== false) {
+                $path4name = substr($url, strrpos($url, '#'));
             }
             else if (in_array($scheme, ['http', 'https'])) {
                 $path4name = parse_url($url, PHP_URL_PATH);
@@ -408,7 +412,7 @@ class Filesys
             $data['bytes'] = @file_get_contents($url);
             if ($data['bytes'] === false) {
                 $error = error_get_last();
-                Log::warning("$url, load error: " . $error['message']);
+                Log::warning("Filesys::loadURL($url), load error: " . $error['message']);
                 return null;
             }
             $data['ext'] = strtolower(pathinfo($path4name, PATHINFO_EXTENSION));
