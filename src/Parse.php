@@ -72,7 +72,7 @@ class Parse
             if (self::$errstr) self::$errstr .= "\n";
             self::$errstr .= $errstr;
         });
-        while (($row = fgetcsv($handle, 0, $sep)) !== FALSE) {
+        while (($row = fgetcsv($handle, 0, $sep,  "\\")) !== FALSE) {
             $n++;
             if ($n == 1) continue; // jump first line
             if (!$row || !count($row) || !$row[0]) {
@@ -148,7 +148,7 @@ class Parse
         $ret = array();
         $handle = fopen($file, "r");
         $n = 0;
-        while (($data = fgetcsv($handle, 0, $sep)) !== FALSE) {
+        while (($data = fgetcsv($handle, 0, $sep,  "\\")) !== FALSE) {
             $n++;
             if (!$data || !count($data) || !$data[0]) {
                 continue; // empty lines
