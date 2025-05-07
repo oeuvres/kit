@@ -16,7 +16,7 @@ use Oeuvres\Kit\Logger\{LoggerCli};
 class Cliglob
 {
     /** Options */
-    private static $options = [];
+    protected static $options = [];
 
     /**
      * Get an option
