@@ -17,6 +17,8 @@ class Cliglob
 {
     /** Options */
     protected static $options = [];
+    /** Files */
+    protected static $globs;
 
     /**
      * Get an option
@@ -48,9 +50,10 @@ class Cliglob
     /**
      * Parse command line arguments and process files
      */
-    public static function glob(callable $action)
+    public static function args()
     {
         global $argv;
+        if (isset(self::$globs)) return; 
         $shortopts = "";
         $shortopts .= "h"; // help message
         $shortopts .= "f"; // force transformation
@@ -59,8 +62,8 @@ class Cliglob
         $shortopts .= "t:"; // template file
         $rest_index = null;
         self::putAll(getopt($shortopts, [], $rest_index));
-        $pos_args = array_slice($argv, $rest_index);
-        if (count($pos_args) < 1) {
+        self::$globs = array_slice($argv, $rest_index);
+        if (count(self::$globs) < 1) {
             exit(self::help());
         }
         if (isset(self::$options['v'])) {
@@ -69,23 +72,31 @@ class Cliglob
         else {
             Log::setLogger(new LoggerCli(LogLevel::INFO));
         }
+    }
+    
+    /**
+     * Process files
+     */
+    public static function glob(callable $action)
+    {
+        self::args();
         // loop on arguments to get files of globs
-        foreach ($pos_args as $arg) {
-            $glob = glob($arg);
-            if (count($glob) > 1) {
-                Log::info("=== " . $arg . " ===");
+        foreach (self::$globs as $glob) {
+            $files = glob($glob);
+            if (count($files) > 1) {
+                Log::info("=== " . $glob . " ===");
             }
-            foreach ($glob as $src_file) {
-                if (is_dir($src_file)) continue;
-                if (!Filesys::readable($src_file)) {
+            foreach ($files as $srcFile) {
+                if (is_dir($srcFile)) continue;
+                if (!Filesys::readable($srcFile)) {
                     continue;
                 }
-                $dst_file = self::destination($src_file);
+                $dstFile = self::destination($srcFile);
                 // test freshness
                 if (isset((self::$options['f']))); // force
-                else if (!file_exists($dst_file)); // destination not exists
-                else if (filemtime($src_file) < filemtime($dst_file)) continue;
-                $action($src_file, $dst_file);
+                else if (!file_exists($dstFile)); // destination not exists
+                else if (filemtime($srcFile) < filemtime($dstFile)) continue;
+                $action($srcFile, $dstFile);
             }
         }
     }
@@ -131,12 +142,12 @@ OPTIONS
     /**
      * For simple export, default destination file
      */
-    static public function destination($src_file): string
+    static public function destination($srcFile): string
     {
-        $dst_dir = Filesys::normdir(self::get('d', dirname($src_file) . DIRECTORY_SEPARATOR));
-        $dst_name =  pathinfo($src_file, PATHINFO_FILENAME);
-        $dst_file = $dst_dir . self::get('dst_prefix', '') . $dst_name . self::get('dst_ext');
-        return $dst_file;
+        $dstDir = Filesys::normdir(self::get('d', dirname($srcFile) . DIRECTORY_SEPARATOR));
+        $dstName =  pathinfo($srcFile, PATHINFO_FILENAME);
+        $dstFile = $dstDir . self::get('dst_prefix', '') . $dstName . self::get('dst_ext');
+        return $dstFile;
 
     }
 }

@@ -325,8 +325,7 @@ class Route {
         $start = strpos(self::$html, "<$tag");
         // no body to slice, return all
         if ($start === false && $tag == 'body') {
-            echo self::$html;
-            return;
+            return self::$html;
         }
         // other tag, show nothing
         else if ($start === false) {
@@ -341,10 +340,10 @@ class Route {
         // end of tag
         $end = strpos(self::$html, "</$tag>", $start);
         if ($end === false) {
-            echo substr(self::$html, $start +1);
+            return substr(self::$html, $start +1);
         }
         else {
-            echo substr(self::$html, $start+1, $end - $start - 1);
+            return substr(self::$html, $start+1, $end - $start - 1);
         }
     
     }
@@ -352,67 +351,71 @@ class Route {
     /**
      * Populate a page with content
      */
-    public static function main(): void
+    public static function main(): string
     {
-        // echo captured contents
-        echo self::$cont;
+        // self::$cont,  captured contents
         // a static content to include
         if (self::$html) {
-            echo self::html_inner('body');
+            return self::$cont . self::html_inner('body');
         }
         if (!isset(self::$main)) {
             // strange, log it ? desired ?
             // this is bad, but be nice
             if (function_exists('main')) {
-                echo call_user_func('main');
+                return self::$cont . call_user_func('main');
             }
-            return;
+            return self::$cont;
         }
         // main is a callable, call it
         else if (is_callable(self::$main)) {
             $fun = self::$main; // found required to execute callable
-            echo $fun();
-            return;
+            return self::$cont . $fun();
         }
         // a contents captured
         else {
-            echo self::$main;
-            return;
+            return self::$cont .  self::$main;
         }
         // obsolete, global function can’t be redefined
         if (function_exists('main')) {
-            echo call_user_func('main');
+            return self::$cont .  call_user_func('main');
         }
     }
 
     /**
      * Populate a page with content
      */
-    public static function meta($default): void
+    public static function meta($default = ""): string
     {
         // maybe some head in static html to include
         if (self::$html) {
-            echo self::html_inner('head');
+            $meta = self::html_inner('head');
+            if (!$meta) return "";
+            // delete custom css
+            $meta = preg_replace('@\s*<link[^>]+text/css[^>]+>@', "", $meta);
+            $meta = preg_replace('@\s*<meta charset="UTF-8"/>@', "", $meta);
+            $meta = preg_replace('@\s*<meta[^>]+viewport[^>]+>@', "", $meta);
+            return $meta;
         }
         // no meta in requested resource;
         else if (!isset(self::$meta)) {
+            return "";
         }
         // a callable
         else if (is_callable(self::$meta)) {
+
+
             $fun = self::$meta; // found required to execute callable
-            echo $fun();
-            return;
+            return $fun();
         }
         // metadata
         else if (self::$meta) {
-            echo self::$meta;
-            return;
+            return self::$meta;
         }
         else if ($default) {
-            echo $default;
+            return $default;
         }
         else {
-            echo "<title>" . I18n::_('title') . "</title>";
+            return "<title>" . I18n::_('title') . "</title>";
         }
     }
 
