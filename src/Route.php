@@ -392,7 +392,8 @@ class Route {
             if (!$meta) return "";
             // delete custom css
             $meta = preg_replace('@\s*<link[^>]+text/css[^>]+>@', "", $meta);
-            $meta = preg_replace('@\s*<meta charset="UTF-8"/>@', "", $meta);
+            $meta = preg_replace('@\s*<link[^>]+rel="stylesheet"[^>]+>@', "", $meta);
+            $meta = preg_replace('@\s*<meta[^>]+charset[^>]+>@', "", $meta);
             $meta = preg_replace('@\s*<meta[^>]+viewport[^>]+>@', "", $meta);
             return $meta;
         }
