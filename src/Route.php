@@ -58,7 +58,7 @@ class Route {
     static private $atts = [];
 
     /**
-     * Initialisation of static vatriables, done one time on initial loading 
+     * Initialisation of static variables, done one time on initial loading 
      * cf. Route::init()
      */
     public static function init()
@@ -251,7 +251,7 @@ class Route {
         else if ($tmpl_file === '') {
             $tmpl_file = self::$tmpl_file;
         }
-        // explitly no template requested
+        // explicitly no template requested
         else if ($tmpl_file === null || $tmpl_file === false) {
             $tmpl_file = null;
         }

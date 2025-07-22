@@ -412,7 +412,7 @@ class Http
     }
 
     /**
-     * Read file on request, or send nice headers fo nor modified
+     * Read file on request, or send nice headers fo not modified
      */
     public static function readfile(string $file): bool
     {
@@ -423,7 +423,9 @@ class Http
             Log::warning(I18n::_("Web.readfile.404"));
             return false;
         }
-        self::notModified($file);
+        $stat = stat($file);
+        $etag = '"' . md5($stat['mtime'] . $stat['size']) . '"';
+        self::notModified(filemtime($file), $etag);
         $ext = ltrim(pathinfo($file, PATHINFO_EXTENSION), '.');
 
         header("Cache-control: public"); // for FireFox over https
@@ -451,45 +453,35 @@ class Http
     }
 
     /**
-     * Send the best headers for cache, according to the request and a timestamp
+     * Send the best headers for cache, according to the request and a timestamp.
+     * Use a default expires of one day, to invite client to check if resource has change.
      */
-    public static function notModified($file, $expires = null, $force = false)
+    public static function notModified($lastModified, $etag = null, $expires = 86400)
     {
-        if (!$file) return false;
-        $filemtime = false;
-        // seems already a filemtime
-        if (is_int($file)) $filemtime = $file;
-        // if array of file, get the newest
-        else if (is_array($file)) foreach ($file as $f) {
-            // if not file exists, no error
-            if (!file_exists($f)) continue;
-            $i = filemtime($f);
-            if ($i && $i > $filemtime) $filemtime = $i;
+        // Ensure $lastModified is a GMT date string
+        if (!$lastModified) return; // Can't proceed without timestamp
+
+        // Set header values
+        header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $lastModified) . ' GMT');
+        if ($etag) {
+            header('ETag: "' . $etag . '"');
         }
-        else $filemtime = filemtime($file);
-        if (!$filemtime) return $filemtime;
-        // Default expires
-        if (filemtime($_SERVER['SCRIPT_FILENAME']) > $filemtime) {
-            $filemtime = filemtime($_SERVER['SCRIPT_FILENAME']);
+        header("Cache-Control: public, max-age=$expires");
+        header('Expires: ' . gmdate('D, d M Y H:i:s', time() + $expires) . ' GMT'); // Fallback for old clients
+
+        // Read client headers
+        $ifModifiedSince = isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ? strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) : false;
+        $ifNoneMatch = isset($_SERVER['HTTP_IF_NONE_MATCH']) ? trim($_SERVER['HTTP_IF_NONE_MATCH'], '"') : false;
+
+        $etagMatch = $etag && $ifNoneMatch && ($ifNoneMatch === $etag);
+
+        $timeMatch = $ifModifiedSince && ($ifModifiedSince >= $lastModified);
+        // Both ETag and Last-Modified are considered: per RFC, if either fails, we send 200.
+        if (($etag && $etagMatch) || (!$etag && $timeMatch)) {
+            header('HTTP/1.1 304 Not Modified');
+            exit();
         }
-        $if_modified_since = isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ? stripslashes($_SERVER['HTTP_IF_MODIFIED_SINCE']) : false;
-        // $if_none_match = isset($_SERVER['HTTP_IF_NONE_MATCH']) ? stripslashes($_SERVER['HTTP_IF_NONE_MATCH']) : false; // etag
-        $modification = gmdate('D, d M Y H:i:s', $filemtime) . ' GMT';
-        // tests for 304
-        if ($force);
-        else if (self::noCache());
-        // ($if_none_match && $if_none_match == $etag) ||
-        else if ($if_modified_since == $modification) {
-            header('HTTP/1.x 304 Not Modified');
-            exit;
-        }
-        // header("X-Date: ". substr(gmdate('r'), 0, -5).'GMT');
-        /*
-        // According to google, https://developers.google.com/speed/docs/best-practices/caching
-        // exclude etag if last-Modified, and last-Modified is better
-        $etag = '"'.md5($modification).'"';
-        header("ETag: $etag");
-        */
+        // Otherwise, continue with normal page output.
     }
 
     /**
