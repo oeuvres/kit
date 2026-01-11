@@ -65,7 +65,20 @@ class Route {
     {
         // suppose path like lib/php/Oeuvres/Kit/Route.php
         self::$lib_dir = dirname(__DIR__, 3). DIRECTORY_SEPARATOR ;
-        $url_request = filter_var($_SERVER['REQUEST_URI'], FILTER_SANITIZE_URL);
+        // try to determine the url requested
+        $url_request = "";
+        if (isset($_SERVER['PATH_INFO'])) {
+            $url_request = filter_var($_SERVER['PATH_INFO'], FILTER_SANITIZE_URL);
+        }
+        if (isset($_SERVER['ORIG_PATH_INFO']) && ($url_request === null || $url_request === false || $url_request === '')) {
+            $url_request = filter_var($_SERVER['ORIG_PATH_INFO'], FILTER_SANITIZE_URL);
+        }
+        if (isset($_SERVER['REDIRECT_PATH_INFO']) && ($url_request === null || $url_request === false || $url_request === '')) {
+            $url_request = filter_var($_SERVER['REDIRECT_PATH_INFO'], FILTER_SANITIZE_URL);
+        }
+        if ($url_request === null || $url_request === false || $url_request === '') {
+            $url_request = filter_var($_SERVER['REQUEST_URI'], FILTER_SANITIZE_URL);
+        }
         $url_request = strtok($url_request, '?'); // old
 
 
