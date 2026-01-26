@@ -408,6 +408,7 @@ class Route {
             $meta = preg_replace('@\s*<link[^>]+rel="stylesheet"[^>]+>@', "", $meta);
             $meta = preg_replace('@\s*<meta[^>]+charset[^>]+>@', "", $meta);
             $meta = preg_replace('@\s*<meta[^>]+viewport[^>]+>@', "", $meta);
+            self::$title = preg_match('~<title[^>]*>\s*(.*?)\s*</title>~is', $meta, $m) ? $m[1] : '';
             return $meta;
         }
         // no meta in requested resource;
@@ -448,10 +449,6 @@ class Route {
         }
         else if (isset(self::$title)) {
             $s = self::$title;
-        }
-        // very, very, obsolete
-        else if (function_exists('title')) {
-            $s = call_user_func('title');
         }
         if ($s) return $s;
         if ($default) {
