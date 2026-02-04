@@ -399,32 +399,27 @@ class Route {
      */
     public static function meta($default = ""): string
     {
-        // maybe some head in static html to include
-        if (self::$html) {
-            $meta = self::html_inner('head');
-            if (!$meta) return "";
-            // delete custom css
-            $meta = preg_replace('@\s*<link[^>]+text/css[^>]+>@', "", $meta);
-            $meta = preg_replace('@\s*<link[^>]+rel="stylesheet"[^>]+>@', "", $meta);
-            $meta = preg_replace('@\s*<meta[^>]+charset[^>]+>@', "", $meta);
-            $meta = preg_replace('@\s*<meta[^>]+viewport[^>]+>@', "", $meta);
-            self::$title = preg_match('~<title[^>]*>\s*(.*?)\s*</title>~is', $meta, $m) ? $m[1] : '';
-            return $meta;
-        }
-        // no meta in requested resource;
-        else if (!isset(self::$meta)) {
-            return "";
-        }
         // a callable
-        else if (is_callable(self::$meta)) {
-
-
+        if (is_callable(self::$meta)) {
             $fun = self::$meta; // found required to execute callable
             return $fun();
         }
         // metadata
         else if (self::$meta) {
             return self::$meta;
+        }
+        // maybe some head in static html to include
+        else if (self::$html) {
+            $meta = self::html_inner('head');
+            if (!$meta) return "";
+            // delete custom css links but keep local css
+            $meta = preg_replace('@\s*<link[^>]+text/css[^>]+>@', "", $meta);
+            $meta = preg_replace('@\s*<link[^>]+rel="stylesheet"[^>]+>@', "", $meta);
+            $meta = preg_replace('@\s*<meta[^>]+charset[^>]+>@', "", $meta);
+            $meta = preg_replace('@\s*<meta[^>]+viewport[^>]+>@', "", $meta);
+            self::$title = preg_match('~<title[^>]*>\s*(.*?)\s*</title>~is', $meta, $m) ? $m[1] : '';
+            self::$meta = $meta;
+            return $meta;
         }
         else if ($default) {
             return $default;
