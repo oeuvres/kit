@@ -453,31 +453,60 @@ class Http
     }
 
     /**
-     * Send the best headers for cache, according to the request and a timestamp.
-     * Use a default expires of one day, to invite client to check if resource has change.
+     * Send cache headers and decide 304 vs 200 using an array of files.
+     *
+     * Builds an ETag from file path, mtime, and size, and uses the newest mtime
+     * as Last-Modified. Sends headers first, then checks client validators
+     * (If-None-Match preferred, otherwise If-Modified-Since) to return 304.
+     *
+     * @param string[] $files Files used to compute ETag and Last-Modified.
+     * @param int $expires Cache lifetime in seconds.
+     * @return void
      */
-    public static function notModified($lastModified, $etag = null, $expires = 86400)
+    public static function notModified(array $files, $expires = 86400)
     {
-        // Ensure $lastModified is a GMT date string
-        if (!$lastModified) return; // Can't proceed without timestamp
+        if (!count($files)) return; // Can't proceed without inputs
 
-        // Set header values
+        $lastModified = 0;
+        $etagParts = array();
+        foreach ($files as $file) {
+            if (!is_string($file) || !Filesys::readable($file)) {
+                continue;
+            }
+            $stat = stat($file);
+            if (!$stat) continue;
+            if ($stat['mtime'] > $lastModified) $lastModified = $stat['mtime'];
+            $etagParts[] = $file . '|' . $stat['mtime'] . '|' . $stat['size'];
+        }
+
+        if (!$lastModified) return; // Nothing usable
+
+        $etag = $etagParts ? md5(implode("\n", $etagParts)) : null;
+
+        // Send cache headers (before 200 or 304)
         header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $lastModified) . ' GMT');
         if ($etag) {
             header('ETag: "' . $etag . '"');
         }
         header("Cache-Control: public, max-age=$expires");
-        header('Expires: ' . gmdate('D, d M Y H:i:s', time() + $expires) . ' GMT'); // Fallback for old clients
+        header('Expires: ' . gmdate('D, d M Y H:i:s', time() + $expires) . ' GMT');
 
-        // Read client headers
+        // Read client headers (ETag first per RFC)
+        $ifNoneMatch = isset($_SERVER['HTTP_IF_NONE_MATCH']) ? trim($_SERVER['HTTP_IF_NONE_MATCH']) : false;
         $ifModifiedSince = isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ? strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) : false;
-        $ifNoneMatch = isset($_SERVER['HTTP_IF_NONE_MATCH']) ? trim($_SERVER['HTTP_IF_NONE_MATCH'], '"') : false;
 
-        $etagMatch = $etag && $ifNoneMatch && ($ifNoneMatch === $etag);
+        if ($etag && $ifNoneMatch) {
+            $clientEtags = array_map('trim', explode(',', $ifNoneMatch));
+            foreach ($clientEtags as $clientEtag) {
+                $clientEtag = trim($clientEtag, '"');
+                if ($clientEtag === $etag || $clientEtag === '*') {
+                    header('HTTP/1.1 304 Not Modified');
+                    exit();
+                }
+            }
+        }
 
-        $timeMatch = $ifModifiedSince && ($ifModifiedSince >= $lastModified);
-        // Both ETag and Last-Modified are considered: per RFC, if either fails, we send 200.
-        if (($etag && $etagMatch) || (!$etag && $timeMatch)) {
+        if ($ifModifiedSince && ($ifModifiedSince >= $lastModified)) {
             header('HTTP/1.1 304 Not Modified');
             exit();
         }
