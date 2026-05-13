@@ -429,7 +429,7 @@ class Http
         $ext = ltrim(pathinfo($file, PATHINFO_EXTENSION), '.');
 
         header("Cache-control: public"); // for FireFox over https
-        header("Last-Modified: " . 
+        header("Last-Modified: " .
             gmdate('D, d M Y H:i:s', filemtime($file)) . ' GMT');
 
 
@@ -439,7 +439,7 @@ class Http
             $type = $mime["type"];
             // some infos for caching persistant resources
             if (isset($mime['max-age'])) {
-                header('Cache-Control: max-age='. $mime['max-age']);
+                header('Cache-Control: max-age=' . $mime['max-age']);
                 header('Expires: ' . gmdate('D, d M Y H:i:s', time() +  $mime['max-age']) . ' GMT');
             }
         }
@@ -595,5 +595,113 @@ class Http
     {
         if (!$str) return 0;
         return ini_get('mbstring.func_overload') ? mb_strlen($str, '8bit') : strlen($str);
+    }
+
+    /**
+     * Streams an HTML fragment response if it is reachable.
+     *
+     * The function returns false only if no output has been sent and the caller may
+     * safely emit a fallback document.
+     *
+     * If streaming has started, the function returns true even if cURL later reports
+     * an error, because emitting fallback HTML after partial remote output would
+     * corrupt the response.
+     *
+     * @param string $url Html fragment url.
+     * @return bool True if this function has emitted output, false if fallback is safe.
+     */
+    static function streamHtml($url): bool
+    {
+        $curl = curl_init($url);
+
+        if ($curl === false) {
+            return false;
+        }
+
+        $started = false;
+        $status = 0;
+
+        curl_setopt_array($curl, [
+            CURLOPT_CUSTOMREQUEST => 'GET',
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_RETURNTRANSFER => false,
+            CURLOPT_HEADER => false,
+
+            CURLOPT_CONNECTTIMEOUT_MS => 500,
+            CURLOPT_TIMEOUT_MS => 30000,
+
+            CURLOPT_LOW_SPEED_LIMIT => 512,
+            CURLOPT_LOW_SPEED_TIME => 5,
+
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+
+            CURLOPT_HTTPHEADER => [
+                'Accept: text/html',
+            ],
+
+            CURLOPT_ENCODING => '',
+            CURLOPT_USERAGENT => 'unige-piaget-php/1.0',
+
+            CURLOPT_WRITEFUNCTION => static function ($curl, string $chunk) use (&$started, &$status): int {
+                $status = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+
+                if ($status < 200 || $status >= 300) {
+                    return 0;
+                }
+
+                if (!$started) {
+                    $started = true;
+
+                    if (!headers_sent()) {
+                        http_response_code(200);
+                        header('Content-Type: text/html; charset=UTF-8');
+                        header('Cache-Control: no-cache');
+                        header('X-Accel-Buffering: no');
+                    }
+                }
+
+                echo $chunk;
+
+                if (ob_get_level() > 0) {
+                    @ob_flush();
+                }
+                flush();
+
+                return strlen($chunk);
+            },
+        ]);
+
+        $ok = curl_exec($curl);
+        $errno = curl_errno($curl);
+        $error = curl_error($curl);
+        $status = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+
+        if (PHP_VERSION_ID < 80000) {
+            curl_close($curl);
+        }
+        $curl = null;
+
+        if (!$started && ($ok === false || $errno !== 0 || $status < 200 || $status >= 300)) {
+            error_log(
+                'Service unavailable: status=' . $status
+                    . ' errno=' . $errno
+                    . ' error=' . $error
+                    . ' url=' . $url
+            );
+
+            return false;
+        }
+
+        if ($started && ($ok === false || $errno !== 0)) {
+            error_log(
+                'Service stream interrupted after output started: status=' . $status
+                    . ' errno=' . $errno
+                    . ' error=' . $error
+                    . ' url=' . $url
+            );
+        }
+
+        return $started;
     }
 }
