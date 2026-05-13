@@ -453,64 +453,94 @@ class Http
     }
 
     /**
-     * Send cache headers and decide 304 vs 200 using an array of files.
+     * Send conditional cache headers and stop with 304 when the client cache is valid.
      *
-     * Builds an ETag from file path, mtime, and size, and uses the newest mtime
-     * as Last-Modified. Sends headers first, then checks client validators
-     * (If-None-Match preferred, otherwise If-Modified-Since) to return 304.
+     * This function computes validators from a list of dependency files:
+     * - Last-Modified is the newest file modification time.
+     * - ETag is built from each readable file path, mtime, and size.
+     *
+     * In development mode, use $expires = 0 to force browser revalidation on each visit.
+     * In production, use a positive value to allow reuse without revalidation during max-age.
      *
      * @param string[] $files Files used to compute ETag and Last-Modified.
-     * @param int $expires Cache lifetime in seconds.
+     * @param int $expires Cache lifetime in seconds. Use 0 for "store but always revalidate".
      * @return void
      */
-    public static function notModified(array $files, $expires = 86400)
+    public static function notModified(array $files, int $expires = 0): void
     {
-        if (!count($files)) return; // Can't proceed without inputs
+        if (!$files) {
+            return;
+        }
 
         $lastModified = 0;
         $etagParts = array();
+
         foreach ($files as $file) {
             if (!is_string($file) || !Filesys::readable($file)) {
                 continue;
             }
+
             $stat = stat($file);
-            if (!$stat) continue;
-            if ($stat['mtime'] > $lastModified) $lastModified = $stat['mtime'];
-            $etagParts[] = $file . '|' . $stat['mtime'] . '|' . $stat['size'];
+            if (!$stat) {
+                continue;
+            }
+
+            $mtime = (int) $stat['mtime'];
+            $size = (int) $stat['size'];
+
+            if ($mtime > $lastModified) {
+                $lastModified = $mtime;
+            }
+
+            $etagParts[] = $file . '|' . $mtime . '|' . $size;
         }
 
-        if (!$lastModified) return; // Nothing usable
+        if (!$lastModified || !$etagParts) {
+            return;
+        }
 
-        $etag = $etagParts ? md5(implode("\n", $etagParts)) : null;
+        $etag = '"' . md5(implode("\n", $etagParts)) . '"';
 
-        // Send cache headers (before 200 or 304)
         header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $lastModified) . ' GMT');
-        if ($etag) {
-            header('ETag: "' . $etag . '"');
+        header('ETag: ' . $etag);
+
+        if ($expires > 0) {
+            header('Cache-Control: public, max-age=' . $expires . ', must-revalidate');
+            header('Expires: ' . gmdate('D, d M Y H:i:s', time() + $expires) . ' GMT');
+        } else {
+            header('Cache-Control: no-cache');
+            header('Expires: ' . gmdate('D, d M Y H:i:s', 0) . ' GMT');
         }
-        header("Cache-Control: public, max-age=$expires");
-        header('Expires: ' . gmdate('D, d M Y H:i:s', time() + $expires) . ' GMT');
 
-        // Read client headers (ETag first per RFC)
-        $ifNoneMatch = isset($_SERVER['HTTP_IF_NONE_MATCH']) ? trim($_SERVER['HTTP_IF_NONE_MATCH']) : false;
-        $ifModifiedSince = isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ? strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) : false;
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        if ($method !== 'GET' && $method !== 'HEAD') {
+            return;
+        }
 
-        if ($etag && $ifNoneMatch) {
-            $clientEtags = array_map('trim', explode(',', $ifNoneMatch));
-            foreach ($clientEtags as $clientEtag) {
-                $clientEtag = trim($clientEtag, '"');
-                if ($clientEtag === $etag || $clientEtag === '*') {
-                    header('HTTP/1.1 304 Not Modified');
-                    exit();
+        $ifNoneMatch = $_SERVER['HTTP_IF_NONE_MATCH'] ?? null;
+
+        if ($ifNoneMatch !== null) {
+            foreach (explode(',', $ifNoneMatch) as $clientEtag) {
+                $clientEtag = trim($clientEtag);
+
+                if ($clientEtag === '*' || $clientEtag === $etag) {
+                    http_response_code(304);
+                    exit;
                 }
             }
+
+            return;
         }
 
-        if ($ifModifiedSince && ($ifModifiedSince >= $lastModified)) {
-            header('HTTP/1.1 304 Not Modified');
-            exit();
+        $ifModifiedSince = $_SERVER['HTTP_IF_MODIFIED_SINCE'] ?? null;
+        if ($ifModifiedSince !== null) {
+            $clientTime = strtotime($ifModifiedSince);
+
+            if ($clientTime !== false && $clientTime >= $lastModified) {
+                http_response_code(304);
+                exit;
+            }
         }
-        // Otherwise, continue with normal page output.
     }
 
     /**
