@@ -388,10 +388,6 @@ class Route {
         else {
             return self::$cont .  self::$main;
         }
-        // obsolete, global function can’t be redefined
-        if (function_exists('main')) {
-            return self::$cont .  call_user_func('main');
-        }
     }
 
     /**
@@ -427,6 +423,14 @@ class Route {
         else {
             return "<title>" . I18n::_('title') . "</title>";
         }
+    }
+
+    /**
+     * Returns the shared HTML buffer by reference.
+     */
+    public static function &html(): string
+    {
+        return self::$html;
     }
 
     /**
