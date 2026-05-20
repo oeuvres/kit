@@ -357,7 +357,8 @@ class Http
      * build an optimized query string from requested params
      */
     public static function qstring(
-        array $names
+        array $names,
+        $amp = '&'
     ): string {
         if (!self::$pars) self::$pars = self::parse();
         $query = array();
@@ -368,7 +369,7 @@ class Http
             }
         }
         if (count($query) < 1) return '';
-        return '?' . implode('&amp;', $query);
+        return '?' . implode($amp, $query);
     }
     /**
      * build a clean query string from get or post, especially
