@@ -629,27 +629,64 @@ class Http
     }
 
     /**
-     * Streams an HTML fragment response if it is reachable.
+     * Streams an HTML fragment from an upstream HTTP service.
      *
-     * The function returns false only if no output has been sent and the caller may
-     * safely emit a fallback document.
+     * This method is intended for dynamic HTML fragments, typically query-dependent
+     * servlet responses. It asks the upstream service not to return cached
+     * representations and sends defensive no-store headers to the downstream client
+     * before emitting the first byte.
      *
-     * If streaming has started, the function returns true even if cURL later reports
-     * an error, because emitting fallback HTML after partial remote output would
-     * corrupt the response.
+     * Return contract:
      *
-     * @param string $url Html fragment url.
-     * @return bool True if this function has emitted output, false if fallback is safe.
+     * - Returns true after at least one byte has been emitted to the client.
+     * - Returns false if nothing has been emitted and the caller may safely emit a
+     *   fallback representation.
+     * - Returns true after partial output even if cURL later reports an error,
+     *   because emitting fallback HTML after partial remote output would corrupt the
+     *   response.
+     *
+     * Diagnostic information is written to $info when provided:
+     *
+     * - emitted: bool, whether bytes were emitted to the client.
+     * - bytes: int, number of bytes emitted to the client.
+     * - discarded: int, number of upstream bytes discarded from an unusable response.
+     * - status: int, upstream HTTP status code, or 0 when no HTTP response was received.
+     * - errno: int, cURL error number.
+     * - error: string, cURL error message.
+     * - reason: string, machine-readable outcome:
+     *   "ok", "curl_init", "curl_error", "http_status", "not_modified",
+     *   "no_content", "empty_body", "partial_error".
+     *
+     * A 304 Not Modified response is treated as unusable, because this PHP proxy does
+     * not own a cached upstream body to replay.
+     *
+     * @param string $url HTML fragment URL.
+     * @param array<string,mixed>|null $info Optional diagnostic output.
+     * @return bool True if output was emitted, false if fallback output is still safe.
      */
-    static function streamHtml($url): bool
+    static function streamHtml(string $url, ?array &$info = null): bool
     {
+        $info = [
+            'url' => $url,
+            'emitted' => false,
+            'bytes' => 0,
+            'discarded' => 0,
+            'status' => 0,
+            'errno' => 0,
+            'error' => '',
+            'reason' => null,
+        ];
+
         $curl = curl_init($url);
 
         if ($curl === false) {
+            $info['reason'] = 'curl_init';
             return false;
         }
 
-        $started = false;
+        $emitted = false;
+        $bytes = 0;
+        $discarded = 0;
         $status = 0;
 
         curl_setopt_array($curl, [
@@ -669,70 +706,96 @@ class Http
 
             CURLOPT_HTTPHEADER => [
                 'Accept: text/html',
+                'Cache-Control: no-store, no-cache, max-age=0',
+                'Pragma: no-cache',
             ],
 
             CURLOPT_ENCODING => '',
             CURLOPT_USERAGENT => 'unige-piaget-php/1.0',
 
-            CURLOPT_WRITEFUNCTION => static function ($curl, string $chunk) use (&$started, &$status): int {
-                $status = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+            CURLOPT_WRITEFUNCTION => static function ($curl, string $chunk) use (
+                &$emitted,
+                &$bytes,
+                &$discarded,
+                &$status
+            ): int {
+                $status = (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+                $length = self::length($chunk);
 
-                if ($status < 200 || $status >= 300) {
-                    return 0;
+                if ($status < 200 || $status >= 300 || $status === 204) {
+                    $discarded += $length;
+                    return $length;
                 }
 
-                if (!$started) {
-                    $started = true;
+                if (!$emitted) {
+                    $emitted = true;
 
                     if (!headers_sent()) {
                         http_response_code(200);
                         header('Content-Type: text/html; charset=UTF-8');
-                        header('Cache-Control: no-cache');
+                        header('Cache-Control: no-store, no-cache, max-age=0, must-revalidate');
+                        header('Pragma: no-cache');
+                        header('Expires: 0');
                         header('X-Accel-Buffering: no');
                     }
                 }
 
                 echo $chunk;
+                $bytes += $length;
 
                 if (ob_get_level() > 0) {
                     @ob_flush();
                 }
                 flush();
 
-                return strlen($chunk);
+                return $length;
             },
         ]);
 
         $ok = curl_exec($curl);
-        $errno = curl_errno($curl);
-        $error = curl_error($curl);
-        $status = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+
+        $info['emitted'] = $emitted;
+        $info['bytes'] = $bytes;
+        $info['discarded'] = $discarded;
+        $info['status'] = (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+        $info['errno'] = curl_errno($curl);
+        $info['error'] = curl_error($curl);
 
         if (PHP_VERSION_ID < 80000) {
             curl_close($curl);
         }
-        $curl = null;
 
-        if (!$started && ($ok === false || $errno !== 0 || $status < 200 || $status >= 300)) {
-            error_log(
-                'Service unavailable: status=' . $status
-                    . ' errno=' . $errno
-                    . ' error=' . $error
-                    . ' url=' . $url
-            );
+        if ($emitted) {
+            if ($ok === false || $info['errno'] !== 0) {
+                $info['reason'] = 'partial_error';
+            } else {
+                $info['reason'] = 'ok';
+            }
 
+            return true;
+        }
+
+        if ($info['status'] === 304) {
+            $info['reason'] = 'not_modified';
             return false;
         }
 
-        if ($started && ($ok === false || $errno !== 0)) {
-            error_log(
-                'Service stream interrupted after output started: status=' . $status
-                    . ' errno=' . $errno
-                    . ' error=' . $error
-                    . ' url=' . $url
-            );
+        if ($info['status'] === 204) {
+            $info['reason'] = 'no_content';
+            return false;
         }
 
-        return $started;
+        if ($ok === false || $info['errno'] !== 0) {
+            $info['reason'] = 'curl_error';
+            return false;
+        }
+
+        if ($info['status'] < 200 || $info['status'] >= 300) {
+            $info['reason'] = 'http_status';
+            return false;
+        }
+
+        $info['reason'] = 'empty_body';
+        return false;
     }
 }
