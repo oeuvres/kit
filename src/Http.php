@@ -629,9 +629,9 @@ class Http
     }
 
     /**
-     * Streams an HTML fragment from an upstream HTTP service.
+     * Streams HTML from an upstream HTTP service.
      *
-     * This method is intended for dynamic HTML fragments, typically query-dependent
+     * This method is intended for dynamic HTML, typically query-dependent
      * servlet responses. It asks the upstream service not to return cached
      * representations and sends defensive no-store headers to the downstream client
      * before emitting the first byte.
@@ -660,7 +660,7 @@ class Http
      * A 304 Not Modified response is treated as unusable, because this PHP proxy does
      * not own a cached upstream body to replay.
      *
-     * @param string $url HTML fragment URL.
+     * @param string $url HTML URL.
      * @param array<string,mixed>|null $info Optional diagnostic output.
      * @return bool True if output was emitted, false if fallback output is still safe.
      */
@@ -721,12 +721,10 @@ class Http
             ): int {
                 $status = (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
                 $length = self::length($chunk);
-
                 if ($status < 200 || $status >= 300 || $status === 204) {
                     $discarded += $length;
                     return $length;
                 }
-
                 if (!$emitted) {
                     $emitted = true;
 
@@ -739,15 +737,12 @@ class Http
                         header('X-Accel-Buffering: no');
                     }
                 }
-
                 echo $chunk;
                 $bytes += $length;
-
                 if (ob_get_level() > 0) {
                     @ob_flush();
                 }
                 flush();
-
                 return $length;
             },
         ]);
@@ -771,7 +766,6 @@ class Http
             } else {
                 $info['reason'] = 'ok';
             }
-
             return true;
         }
 
